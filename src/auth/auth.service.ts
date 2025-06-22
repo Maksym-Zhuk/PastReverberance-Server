@@ -1,0 +1,82 @@
+import { Inject, Injectable, UnauthorizedException } from '@nestjs/common';
+import { JwtService } from '@nestjs/jwt';
+import { DRIZZLE } from 'src/drizzle/drizzle.token';
+import { DrizzleDB } from 'src/drizzle/types/drizzle';
+import refreshJwtConfig from './config/refreshJwt.config';
+import { ConfigType } from '@nestjs/config';
+import { eq } from 'drizzle-orm';
+import { CurrentUser } from './types/current-user';
+import { RegisterInput } from './dto/register.dto';
+import { AuthJwtPayload } from './types/auth-jwtPayload';
+import * as bcrypt from 'bcrypt';
+import { users } from 'src/drizzle/schema/users.schema';
+import { LoginInput } from './dto/login.dto';
+
+@Injectable()
+export class AuthService {
+  constructor(
+    @Inject(DRIZZLE) private readonly db: DrizzleDB,
+    private jwtService: JwtService,
+    @Inject(refreshJwtConfig.KEY)
+    private refreshTokenConfig: ConfigType<typeof refreshJwtConfig>,
+  ) {}
+
+  private async generateTokens(userId: number) {
+    const payload: AuthJwtPayload = { sub: userId };
+    const [accessToken, refreshToken] = await Promise.all([
+      this.jwtService.signAsync(payload),
+      this.jwtService.signAsync(payload, this.refreshTokenConfig),
+    ]);
+    return {
+      accessToken,
+      refreshToken,
+    };
+  }
+
+  async register(input: RegisterInput) {
+    const hashedPassword: string = await bcrypt.hash(input.password, 10);
+    const user = await this.db
+      .insert(users)
+      .values({
+        ...input,
+        password: hashedPassword,
+      })
+      .returning();
+    if (!user[0]) throw new UnauthorizedException('User not created');
+    const { accessToken, refreshToken } = await this.generateTokens(user[0].id);
+    if (!accessToken && !refreshToken)
+      throw new UnauthorizedException('Tokens not created');
+    return { accessToken, refreshToken, user: user[0] };
+  }
+
+  async login(input: LoginInput) {
+    const user = await this.db.query.users.findFirst({
+      where: (users) => eq(users.email, input.email),
+    });
+    if (!user) throw new UnauthorizedException('User not found!');
+    const checkPassword = await bcrypt.compare(input.password, user?.password);
+    if (!checkPassword) throw new UnauthorizedException('Incorrect password!');
+    const { accessToken, refreshToken } = await this.generateTokens(user.id);
+    if (!accessToken && !refreshToken)
+      throw new UnauthorizedException('Tokens not created');
+    return { accessToken, refreshToken, user };
+  }
+
+  async validateJwtUser(userId: number) {
+    const user = await this.db.query.users.findFirst({
+      where: (users) => eq(users.id, userId),
+    });
+    if (!user) throw new UnauthorizedException('User not found!');
+    const currentUser: CurrentUser = { id: user.id, role: user.role };
+    return currentUser;
+  }
+
+  async validateRefreshToken(userId: number) {
+    const user = await this.db.query.users.findFirst({
+      where: (users) => eq(users.id, userId),
+    });
+    if (!user) throw new UnauthorizedException('User not found!');
+    const accessToken = await this.jwtService.signAsync({ sub: userId });
+    return { accessToken };
+  }
+}
