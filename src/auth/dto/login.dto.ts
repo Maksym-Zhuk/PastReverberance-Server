@@ -13,12 +13,12 @@ export class LoginInput {
   @IsEmail()
   @IsNotEmpty()
   @IsString()
-  email!: string;
+  email: string;
 
   @Field()
   @MinLength(8)
   @IsStrongPassword()
   @IsNotEmpty()
   @IsString()
-  password!: string;
+  password: string;
 }

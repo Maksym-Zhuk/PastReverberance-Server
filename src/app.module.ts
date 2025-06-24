@@ -3,9 +3,9 @@ import { DrizzleModule } from './drizzle/drizzle.module';
 import { ConfigModule } from '@nestjs/config';
 import { AuthModule } from './auth/auth.module';
 import { GraphQLModule } from '@nestjs/graphql';
-import { ApolloDriver, ApolloDriverConfig } from '@nestjs/apollo';
 import { FastifyRequest, FastifyReply } from 'fastify';
 import { UsersModule } from './users/users.module';
+import { MercuriusDriver, MercuriusDriverConfig } from '@nestjs/mercurius';
 
 @Module({
   imports: [
@@ -14,22 +14,18 @@ import { UsersModule } from './users/users.module';
       isGlobal: true,
     }),
     AuthModule,
-    GraphQLModule.forRoot<ApolloDriverConfig>({
-      driver: ApolloDriver,
+    GraphQLModule.forRoot<MercuriusDriverConfig>({
+      driver: MercuriusDriver,
       autoSchemaFile: true,
-      context: ({
-        req,
-        reply,
-      }: {
-        req: FastifyRequest;
-        reply: FastifyReply;
-      }) => ({
-        req,
-        res: reply,
-      }),
+      introspection: true,
+      graphiql: true,
       debug: true,
-      playground: true,
+      context: (request: FastifyRequest, reply: FastifyReply) => ({
+        req: request,
+        reply,
+      }),
     }),
+
     UsersModule,
   ],
   controllers: [],

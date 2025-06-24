@@ -1,63 +1,102 @@
 import { Args, Context, Mutation, Query, Resolver } from '@nestjs/graphql';
 import { AuthService } from './auth.service';
 import { User } from 'src/graphql/users.model';
-import { Response } from 'express';
 import { RegisterInput } from './dto/register.dto';
 import { LoginInput } from './dto/login.dto';
+import { FastifyReply, FastifyRequest } from 'fastify';
+import { UnauthorizedException, UseGuards } from '@nestjs/common';
+import { GqlRefreshJwtGuard } from 'src/common/guards/gqlRefreshJwt.guard';
 
 @Resolver()
 export class AuthResolver {
   constructor(private readonly authService: AuthService) {}
 
-  @Query(() => String)
-  hello() {
-    return 'Hello';
-  }
-
   @Mutation(() => User)
   async register(
-    @Context('res') res: Response,
     @Args('input') input: RegisterInput,
+    @Context() context: { reply: FastifyReply },
   ) {
     const { accessToken, refreshToken, user } =
       await this.authService.register(input);
 
-    res.cookie('accessToken', accessToken, {
+    context.reply.setCookie('accessToken', accessToken, {
       httpOnly: true,
       sameSite: 'strict',
       path: '/',
-      maxAge: 7 * 24 * 60 * 60 * 1000,
+      maxAge: 24 * 60 * 60,
+      secure: false,
     });
 
-    res.cookie('refreshToken', refreshToken, {
+    context.reply.setCookie('refreshToken', refreshToken, {
       httpOnly: true,
       sameSite: 'strict',
       path: '/',
-      maxAge: 7 * 24 * 60 * 60 * 1000,
+      maxAge: 30 * 24 * 60 * 60,
+      secure: false,
     });
 
     return user;
   }
 
   @Mutation(() => User)
-  async login(@Context('res') res: Response, @Args('input') input: LoginInput) {
+  async login(
+    @Args('input') input: LoginInput,
+    @Context() context: { reply: FastifyReply },
+  ) {
     const { accessToken, refreshToken, user } =
       await this.authService.login(input);
 
-    res.cookie('accessToken', accessToken, {
+    context.reply.setCookie('accessToken', accessToken, {
       httpOnly: true,
       sameSite: 'strict',
       path: '/',
-      maxAge: 7 * 24 * 60 * 60 * 1000,
+      maxAge: 24 * 60 * 60,
     });
 
-    res.cookie('refreshToken', refreshToken, {
+    context.reply.setCookie('refreshToken', refreshToken, {
       httpOnly: true,
       sameSite: 'strict',
       path: '/',
-      maxAge: 7 * 24 * 60 * 60 * 1000,
+      maxAge: 30 * 24 * 60 * 60,
     });
 
     return user;
+  }
+
+  @UseGuards(GqlRefreshJwtGuard)
+  @Mutation(() => String)
+  refreshToken(
+    @Context() context: { reply: FastifyReply; req: FastifyRequest },
+  ) {
+    const user = context.req.user;
+    if (!user || !user.accessToken) {
+      throw new UnauthorizedException('User not found in request');
+    }
+
+    context.reply.setCookie('accessToken', user.accessToken, {
+      httpOnly: true,
+      sameSite: 'strict',
+      path: '/',
+      maxAge: 24 * 60 * 60,
+    });
+
+    return 'Token successfully verified';
+  }
+
+  @Query(() => String)
+  logout(@Context() context: { reply: FastifyReply }) {
+    context.reply.clearCookie('accessToken', {
+      path: '/',
+      httpOnly: true,
+      sameSite: 'strict',
+      secure: false,
+    });
+    context.reply.clearCookie('refreshToken', {
+      path: '/',
+      httpOnly: true,
+      sameSite: 'strict',
+      secure: false,
+    });
+    return 'Logout done';
   }
 }

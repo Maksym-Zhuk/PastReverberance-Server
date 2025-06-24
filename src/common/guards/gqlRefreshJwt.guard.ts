@@ -4,7 +4,7 @@ import { GqlExecutionContext } from '@nestjs/graphql';
 import { FastifyRequest } from 'fastify';
 
 @Injectable()
-export class GqlAuthGuard extends AuthGuard('jwt') {
+export class GqlRefreshJwtGuard extends AuthGuard('refresh-jwt') {
   getRequest(context: ExecutionContext): FastifyRequest {
     const ctx = GqlExecutionContext.create(context);
     const { req } = ctx.getContext<{ req: FastifyRequest }>();
