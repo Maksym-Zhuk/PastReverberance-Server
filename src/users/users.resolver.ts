@@ -17,7 +17,7 @@ import { UpdateUserInput } from './dto/updateUser.dto';
 import { DailyPhoto } from 'src/graphql/dailyPhoto.model';
 import { DailyPhotosService } from 'src/daily-photos/daily-photos.service';
 
-@Resolver()
+@Resolver(() => User)
 export class UsersResolver {
   constructor(
     private readonly usersService: UsersService,

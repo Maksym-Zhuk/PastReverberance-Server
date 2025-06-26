@@ -6,5 +6,6 @@ import { DrizzleModule } from 'src/drizzle/drizzle.module';
 @Module({
   imports: [DrizzleModule],
   providers: [DailyPhotosResolver, DailyPhotosService],
+  exports: [DailyPhotosService],
 })
 export class DailyPhotosModule {}
