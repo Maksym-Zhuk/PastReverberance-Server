@@ -15,6 +15,20 @@
       "when": 1749824731232,
       "tag": "0001_breezy_exiles",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1750948937926,
+      "tag": "0002_pretty_barracuda",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1750951849362,
+      "tag": "0003_real_klaw",
+      "breakpoints": true
     }
   ]
 }

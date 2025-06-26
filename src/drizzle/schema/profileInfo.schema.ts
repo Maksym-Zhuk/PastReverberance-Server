@@ -10,7 +10,6 @@ export const profileInfo = pgTable('profileInfo', {
   firstName: text('firstName').notNull(),
   lastName: text('lastName').notNull(),
   description: text('description').notNull().default(''),
-  avatarUrl: text('avatarUrl').notNull().default(''),
 });
 
 export const profileInfoRelation = relations(profileInfo, ({ one }) => ({

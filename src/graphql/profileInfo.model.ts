@@ -13,7 +13,4 @@ export class ProfileInfo {
 
   @Field()
   description: string;
-
-  @Field()
-  avatarUrl: string;
 }

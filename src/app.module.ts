@@ -6,6 +6,7 @@ import { GraphQLModule } from '@nestjs/graphql';
 import { FastifyRequest, FastifyReply } from 'fastify';
 import { UsersModule } from './users/users.module';
 import { MercuriusDriver, MercuriusDriverConfig } from '@nestjs/mercurius';
+import { DailyPhotosModule } from './daily-photos/daily-photos.module';
 
 @Module({
   imports: [
@@ -27,6 +28,8 @@ import { MercuriusDriver, MercuriusDriverConfig } from '@nestjs/mercurius';
     }),
 
     UsersModule,
+
+    DailyPhotosModule,
   ],
   controllers: [],
   providers: [],

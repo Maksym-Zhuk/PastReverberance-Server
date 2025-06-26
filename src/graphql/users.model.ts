@@ -1,6 +1,7 @@
 import { Field, Int, ObjectType } from '@nestjs/graphql';
 import { Role } from 'src/common/enums/role.enum';
 import { ProfileInfo } from './profileInfo.model';
+import { DailyPhoto } from './dailyPhoto.model';
 
 @ObjectType()
 export class User {
@@ -18,4 +19,7 @@ export class User {
 
   @Field(() => ProfileInfo, { nullable: true })
   profile?: ProfileInfo;
+
+  @Field(() => [DailyPhoto])
+  dailyPhotos?: DailyPhoto[];
 }
