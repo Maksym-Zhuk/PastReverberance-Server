@@ -6,6 +6,8 @@ import type { ConfigType } from '@nestjs/config';
 import { AuthJwtPayload } from '../types/auth-jwtPayload.js';
 import { AuthService } from '../auth.service.js';
 import { cookieExtractor } from '../../common/extractors/cookieExtractor';
+import { FastifyRequest } from 'fastify';
+import { JwtService } from '@nestjs/jwt';
 
 @Injectable()
 export class RefreshJwtStrategy extends PassportStrategy(
@@ -15,18 +17,18 @@ export class RefreshJwtStrategy extends PassportStrategy(
   constructor(
     @Inject(refreshJwtConfig.KEY)
     private refreshJwtConfiguration: ConfigType<typeof refreshJwtConfig>,
-    private appService: AuthService,
+    private readonly authService: AuthService,
+    private readonly jwtService: JwtService,
   ) {
     super({
       jwtFromRequest: cookieExtractor('refreshToken'),
-      secretOrKey: refreshJwtConfiguration.secret!,
-      ignoreExpiration: false,
+      secretOrKey: refreshJwtConfiguration.secret,
       passReqToCallback: true,
+      ignoreExpiration: false,
     });
   }
 
-  override validate(payload: AuthJwtPayload) {
-    const userId = payload.sub;
-    return this.appService.validateRefreshToken(userId);
+  override validate(req: FastifyRequest, payload: AuthJwtPayload) {
+    return this.authService.validateRefreshToken(payload.sub);
   }
 }

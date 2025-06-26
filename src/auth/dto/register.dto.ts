@@ -6,14 +6,10 @@ import {
   IsStrongPassword,
   MinLength,
 } from 'class-validator';
+import { CreateProfileInput } from 'src/users/dto/createProfileInput';
 
 @InputType()
 export class RegisterInput {
-  @Field()
-  @IsNotEmpty()
-  @IsString()
-  login: string;
-
   @Field()
   @IsEmail()
   @IsNotEmpty()
@@ -26,4 +22,7 @@ export class RegisterInput {
   @IsNotEmpty()
   @IsString()
   password: string;
+
+  @Field(() => CreateProfileInput)
+  profile: CreateProfileInput;
 }

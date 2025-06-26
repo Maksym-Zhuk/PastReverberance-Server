@@ -6,6 +6,7 @@ import { LoginInput } from './dto/login.dto';
 import { FastifyReply, FastifyRequest } from 'fastify';
 import { UnauthorizedException, UseGuards } from '@nestjs/common';
 import { GqlRefreshJwtGuard } from 'src/common/guards/gqlRefreshJwt.guard';
+import { refreshResponse } from 'src/graphql/special/refreshResponse';
 
 @Resolver()
 export class AuthResolver {
@@ -64,7 +65,7 @@ export class AuthResolver {
   }
 
   @UseGuards(GqlRefreshJwtGuard)
-  @Mutation(() => String)
+  @Mutation(() => refreshResponse)
   refreshToken(
     @Context() context: { reply: FastifyReply; req: FastifyRequest },
   ) {
@@ -73,14 +74,7 @@ export class AuthResolver {
       throw new UnauthorizedException('User not found in request');
     }
 
-    context.reply.setCookie('accessToken', user.accessToken, {
-      httpOnly: true,
-      sameSite: 'strict',
-      path: '/',
-      maxAge: 24 * 60 * 60,
-    });
-
-    return 'Token successfully verified';
+    return user;
   }
 
   @Query(() => String)

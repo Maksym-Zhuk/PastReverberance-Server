@@ -1,13 +1,11 @@
 import { Field, Int, ObjectType } from '@nestjs/graphql';
 import { Role } from 'src/common/enums/role.enum';
+import { ProfileInfo } from './profileInfo.model';
 
 @ObjectType()
 export class User {
   @Field(() => Int)
   id: number;
-
-  @Field()
-  login: string;
 
   @Field()
   email: string;
@@ -17,4 +15,7 @@ export class User {
 
   @Field(() => Role)
   role: Role;
+
+  @Field(() => ProfileInfo, { nullable: true })
+  profile?: ProfileInfo;
 }

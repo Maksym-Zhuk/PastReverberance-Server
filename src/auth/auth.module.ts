@@ -8,6 +8,7 @@ import jwtConfig from './config/jwt.config';
 import refreshJwtConfig from './config/refreshJwt.config';
 import { JwtStrategy } from './strategies/jwt.strategy';
 import { RefreshJwtStrategy } from './strategies/refresh.strategy';
+import { UsersModule } from 'src/users/users.module';
 
 @Module({
   imports: [
@@ -15,6 +16,7 @@ import { RefreshJwtStrategy } from './strategies/refresh.strategy';
     JwtModule.registerAsync(jwtConfig.asProvider()),
     ConfigModule.forFeature(jwtConfig),
     ConfigModule.forFeature(refreshJwtConfig),
+    UsersModule,
   ],
   providers: [AuthResolver, AuthService, JwtStrategy, RefreshJwtStrategy],
 })
