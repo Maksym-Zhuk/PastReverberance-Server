@@ -22,18 +22,18 @@ export class AuthResolver {
 
     context.reply.setCookie('accessToken', accessToken, {
       httpOnly: true,
-      sameSite: 'strict',
+      sameSite: 'none',
+      secure: true,
       path: '/',
       maxAge: 24 * 60 * 60,
-      secure: false,
     });
 
     context.reply.setCookie('refreshToken', refreshToken, {
       httpOnly: true,
-      sameSite: 'strict',
+      sameSite: 'none',
+      secure: true,
       path: '/',
       maxAge: 30 * 24 * 60 * 60,
-      secure: false,
     });
 
     return user;
@@ -49,14 +49,16 @@ export class AuthResolver {
 
     context.reply.setCookie('accessToken', accessToken, {
       httpOnly: true,
-      sameSite: 'strict',
+      sameSite: 'none',
+      secure: true,
       path: '/',
       maxAge: 24 * 60 * 60,
     });
 
     context.reply.setCookie('refreshToken', refreshToken, {
       httpOnly: true,
-      sameSite: 'strict',
+      sameSite: 'none',
+      secure: true,
       path: '/',
       maxAge: 30 * 24 * 60 * 60,
     });
@@ -80,16 +82,16 @@ export class AuthResolver {
   @Query(() => String)
   logout(@Context() context: { reply: FastifyReply }) {
     context.reply.clearCookie('accessToken', {
-      path: '/',
       httpOnly: true,
-      sameSite: 'strict',
-      secure: false,
+      sameSite: 'none',
+      secure: true,
+      path: '/',
     });
     context.reply.clearCookie('refreshToken', {
-      path: '/',
       httpOnly: true,
-      sameSite: 'strict',
-      secure: false,
+      sameSite: 'none',
+      secure: true,
+      path: '/',
     });
     return 'Logout done';
   }

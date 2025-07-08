@@ -7,7 +7,7 @@ interface JwtConfig {
   };
 }
 
-export default registerAs('jwt', (): JwtConfig => {
+export const jwtConfig = registerAs('jwt', (): JwtConfig => {
   if (!process.env.JWT_SECRET) {
     throw new Error('JWT_SECRET env variable is not set');
   }

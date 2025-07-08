@@ -1,6 +1,6 @@
 import { registerAs } from '@nestjs/config';
 
-export default registerAs('refresh-jwt', () => {
+export const refreshJwtConfig = registerAs('refresh-jwt', () => {
   if (!process.env.JWT_REFRESH_SECRET) {
     throw new Error('JWT_SECRET env variable is not set');
   }

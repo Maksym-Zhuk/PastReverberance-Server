@@ -1,13 +1,16 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { PassportStrategy } from '@nestjs/passport';
 import { Strategy } from 'passport-jwt';
-import refreshJwtConfig from '../config/refreshJwt.config.js';
 import type { ConfigType } from '@nestjs/config';
-import { AuthJwtPayload } from '../types/auth-jwtPayload.js';
 import { AuthService } from '../auth.service.js';
 import { cookieExtractor } from '../../common/extractors/cookieExtractor';
 import { FastifyRequest } from 'fastify';
 import { JwtService } from '@nestjs/jwt';
+import { refreshJwtConfig } from '../config/refreshJwt.config.js';
+
+export interface AuthJwtPayload {
+  sub: number;
+}
 
 @Injectable()
 export class RefreshJwtStrategy extends PassportStrategy(

@@ -1,11 +1,12 @@
 import { Module } from '@nestjs/common';
 import { DailyPhotosService } from './daily-photos.service';
-import { DailyPhotosResolver } from './daily-photos.resolver';
 import { DrizzleModule } from 'src/drizzle/drizzle.module';
+import { DailyPhotosController } from './daily-photos.controller';
 
 @Module({
   imports: [DrizzleModule],
-  providers: [DailyPhotosResolver, DailyPhotosService],
+  providers: [DailyPhotosService],
   exports: [DailyPhotosService],
+  controllers: [DailyPhotosController],
 })
 export class DailyPhotosModule {}

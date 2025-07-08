@@ -3,9 +3,12 @@ import { PassportStrategy } from '@nestjs/passport';
 import { Strategy } from 'passport-jwt';
 import type { ConfigType } from '@nestjs/config';
 import { AuthService } from '../auth.service';
-import jwtConfig from '../config/jwt.config';
-import { AuthJwtPayload } from '../types/auth-jwtPayload';
+import { jwtConfig } from '../config/jwt.config';
 import { cookieExtractor } from 'src/common/extractors/cookieExtractor';
+
+export interface AuthJwtPayload {
+  sub: number;
+}
 
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {

@@ -5,29 +5,8 @@
     {
       "idx": 0,
       "version": "7",
-      "when": 1749809138287,
-      "tag": "0000_minor_maestro",
-      "breakpoints": true
-    },
-    {
-      "idx": 1,
-      "version": "7",
-      "when": 1749824731232,
-      "tag": "0001_breezy_exiles",
-      "breakpoints": true
-    },
-    {
-      "idx": 2,
-      "version": "7",
-      "when": 1750948937926,
-      "tag": "0002_pretty_barracuda",
-      "breakpoints": true
-    },
-    {
-      "idx": 3,
-      "version": "7",
-      "when": 1750951849362,
-      "tag": "0003_real_klaw",
+      "when": 1751624992828,
+      "tag": "0000_aspiring_loki",
       "breakpoints": true
     }
   ]

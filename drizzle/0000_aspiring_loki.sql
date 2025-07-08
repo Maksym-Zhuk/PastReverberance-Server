@@ -12,10 +12,15 @@ CREATE TABLE "profileInfo" (
 	"firstName" text NOT NULL,
 	"lastName" text NOT NULL,
 	"description" text DEFAULT '' NOT NULL,
-	"avatarUrl" text DEFAULT '' NOT NULL,
 	CONSTRAINT "profileInfo_userId_unique" UNIQUE("userId")
 );
 --> statement-breakpoint
+CREATE TABLE "users" (
+	"id" serial PRIMARY KEY NOT NULL,
+	"email" text NOT NULL,
+	"password" text NOT NULL,
+	"role" text DEFAULT 'USER' NOT NULL
+);
+--> statement-breakpoint
 ALTER TABLE "dailyPhotos" ADD CONSTRAINT "dailyPhotos_userId_users_id_fk" FOREIGN KEY ("userId") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "profileInfo" ADD CONSTRAINT "profileInfo_userId_users_id_fk" FOREIGN KEY ("userId") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "users" DROP COLUMN "login";
+ALTER TABLE "profileInfo" ADD CONSTRAINT "profileInfo_userId_users_id_fk" FOREIGN KEY ("userId") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;
