@@ -24,6 +24,7 @@ async function bootstrap() {
     origin: [
       'http://localhost:3000',
       'https://c6j1w7gd-3000.euw.devtunnels.ms',
+      'https://past-reverberance.vercel.app',
     ],
     credentials: true,
     methods: ['GET', 'POST', 'OPTIONS'],
