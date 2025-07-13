@@ -8,6 +8,7 @@ export const dailyPhotos = pgTable('dailyPhotos', {
     .notNull()
     .references(() => users.id, { onDelete: 'cascade' }),
   photoUrl: text('photoUrl').notNull(),
+  photoId: text('photoId').notNull(),
   note: text('note'),
   createdAt: timestamp('createdAt', { withTimezone: true })
     .notNull()

@@ -1,0 +1,1 @@
+ALTER TABLE "dailyPhotos" ADD COLUMN "photoId" text NOT NULL;

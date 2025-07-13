@@ -39,6 +39,7 @@ export class DailyPhotosController {
     const createdPhoto = await this.dailyPhotosService.createDailyPhoto(
       user.id,
       uploadResult.secure_url,
+      uploadResult.public_id,
     );
 
     return createdPhoto;

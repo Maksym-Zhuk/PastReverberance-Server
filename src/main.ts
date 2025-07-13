@@ -14,11 +14,15 @@ async function bootstrap() {
   );
 
   await app.register(fastifyCookie);
-  await app.register(fastifyMultipart, {
-    limits: {
-      fileSize: 10 * 1024 * 1024,
-    },
-  });
+  try {
+    await app.register(fastifyMultipart, {
+      limits: {
+        fileSize: 10 * 1024 * 1024,
+      },
+    });
+  } catch (err) {
+    console.error('❌ Помилка під час реєстрації fastifyMultipart:', err);
+  }
 
   app.enableCors({
     origin: [
