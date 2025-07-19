@@ -42,7 +42,7 @@ export class DailyPhotosService {
   async createDailyPhoto(userId: number, photoUrl: string, photoId: string) {
     const dailyPhoto = await this.db
       .insert(dailyPhotos)
-      .values({ photoUrl, userId, photoId })
+      .values({ photoUrl, userId, photoId, date: new Date().toISOString() })
       .returning();
 
     return dailyPhoto[0];

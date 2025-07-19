@@ -15,5 +15,5 @@ export class DailyPhoto {
   note?: string;
 
   @Field()
-  createdAt: Date;
+  date: string;
 }

@@ -1,0 +1,1 @@
+ALTER TABLE "dailyPhotos" RENAME COLUMN "createdAt" TO "date";

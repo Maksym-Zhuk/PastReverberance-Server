@@ -1,4 +1,4 @@
-import { pgTable, serial, text, integer, timestamp } from 'drizzle-orm/pg-core';
+import { pgTable, serial, text, integer } from 'drizzle-orm/pg-core';
 import { users } from './users.schema';
 import { relations } from 'drizzle-orm';
 
@@ -10,9 +10,7 @@ export const dailyPhotos = pgTable('dailyPhotos', {
   photoUrl: text('photoUrl').notNull(),
   photoId: text('photoId').notNull(),
   note: text('note'),
-  createdAt: timestamp('createdAt', { withTimezone: true })
-    .notNull()
-    .defaultNow(),
+  date: text('date').notNull(),
 });
 
 export const dailyPhotosRelations = relations(dailyPhotos, ({ one }) => ({
