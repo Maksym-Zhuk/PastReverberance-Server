@@ -1,0 +1,21 @@
+# Dev database. Tests use docker-compose.test.yml (:5433, tmpfs) instead.
+name: pastreverberance-dev
+
+services:
+  postgres:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: dev
+      POSTGRES_PASSWORD: dev
+      POSTGRES_DB: pastreverberance
+    ports:
+      - '5432:5432'
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U dev']
+      interval: 1s
+      retries: 30
+
+volumes:
+  pgdata:

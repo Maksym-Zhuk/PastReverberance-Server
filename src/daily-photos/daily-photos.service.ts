@@ -1,5 +1,16 @@
+<<<<<<< Updated upstream
 import { Inject, Injectable, UnauthorizedException } from '@nestjs/common';
 import { eq } from 'drizzle-orm';
+=======
+import {
+  Inject,
+  Injectable,
+  Logger,
+  NotFoundException,
+  ServiceUnavailableException,
+} from '@nestjs/common';
+import { and, desc, eq } from 'drizzle-orm';
+>>>>>>> Stashed changes
 import { cloudinary } from 'src/common/config/cloudinary.config';
 import { DRIZZLE } from 'src/drizzle/drizzle.token';
 import { dailyPhotos } from 'src/drizzle/schema/dailyPhotos.schema';
@@ -8,16 +19,22 @@ import { UpdateDailyPhotoInput } from './dto/updateDailyPhotoInput';
 
 @Injectable()
 export class DailyPhotosService {
+  private readonly logger = new Logger(DailyPhotosService.name);
+
   constructor(@Inject(DRIZZLE) private readonly db: DrizzleDB) {}
 
   async uploadDailyPhotoToCloudinary(
     dataUri: string,
     userId: number,
   ): Promise<{ secure_url: string; public_id: string }> {
+    if (!process.env.CLOUDINARY_CLOUD_NAME || !process.env.CLOUDINARY_API_KEY) {
+      throw new ServiceUnavailableException(
+        'Photo storage is not configured (Cloudinary env vars are empty)',
+      );
+    }
     try {
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
       const result = await cloudinary.uploader.upload(dataUri, {
-        public_id: `past-reverberance/photos/user_${userId}_${Date.now()}`,
+        public_id: `user_${userId}_${Date.now()}`,
         folder: 'past-reverberance/photos',
         overwrite: true,
         invalidate: false,
@@ -30,12 +47,12 @@ export class DailyPhotosService {
 
       return { secure_url: result.secure_url, public_id: result.public_id };
     } catch (error) {
-      if (error instanceof Error) {
-        console.error('Cloudinary upload error:', error.message);
-      } else {
-        console.error('Unknown error during Cloudinary upload', error);
-      }
-      throw new Error('Failed to upload avatar');
+      this.logger.error(
+        'Cloudinary upload error',
+        // cloudinary rejects with a plain object ({ message, http_code }), not an Error
+        error instanceof Error ? error.message : JSON.stringify(error),
+      );
+      throw new ServiceUnavailableException('Failed to upload photo');
     }
   }
 
@@ -52,7 +69,8 @@ export class DailyPhotosService {
     return this.db
       .select()
       .from(dailyPhotos)
-      .where(eq(dailyPhotos.userId, userId));
+      .where(eq(dailyPhotos.userId, userId))
+      .orderBy(desc(dailyPhotos.date), desc(dailyPhotos.id));
   }
 
   async getDailyPhotos(userId: number) {
@@ -83,7 +101,23 @@ export class DailyPhotosService {
     return updateDailyPhoto[0];
   }
 
+<<<<<<< Updated upstream
   async delete(id: number) {
     return await this.db.delete(dailyPhotos).where(eq(dailyPhotos.id, id));
+=======
+  async delete(id: number, userId: number) {
+    const deleted = await this.db
+      .delete(dailyPhotos)
+      .where(and(eq(dailyPhotos.id, id), eq(dailyPhotos.userId, userId)))
+      .returning({ id: dailyPhotos.id, photoId: dailyPhotos.photoId });
+    if (!deleted[0]) throw new NotFoundException('Daily photo not found!');
+    // best effort: the DB row is already gone, don't fail the request
+    if (!process.env.CLOUDINARY_CLOUD_NAME) return;
+    try {
+      await cloudinary.uploader.destroy(deleted[0].photoId);
+    } catch (e) {
+      this.logger.warn(`Cloudinary destroy failed: ${String(e)}`);
+    }
+>>>>>>> Stashed changes
   }
 }

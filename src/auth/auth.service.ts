@@ -10,9 +10,13 @@ import { AuthJwtPayload } from './types/auth-jwtPayload';
 import * as bcrypt from 'bcrypt';
 import { users } from 'src/drizzle/schema/users.schema';
 import { LoginInput } from './dto/login.dto';
-import { CreateProfileInput } from 'src/users/dto/createProfileInput';
 import { profileInfo } from 'src/drizzle/schema/profileInfo.schema';
 import { refreshJwtConfig } from './config/refreshJwt.config';
+<<<<<<< Updated upstream
+=======
+import { omitPassword } from 'src/common/omit-password';
+import { isUniqueViolation } from 'src/common/is-unique-violation';
+>>>>>>> Stashed changes
 
 @Injectable()
 export class AuthService {
@@ -40,15 +44,26 @@ export class AuthService {
 
   async register(input: RegisterInput) {
     const hashedPassword: string = await bcrypt.hash(input.password, 10);
-    const user = await this.db
-      .insert(users)
-      .values({
-        email: input.email,
-        password: hashedPassword,
+    const { firstName, lastName, description = '' } = input.profile;
+    // user + profile are created atomically: no orphan user if profile fails
+    const userId = await this.db
+      .transaction(async (tx) => {
+        const [created] = await tx
+          .insert(users)
+          .values({ email: input.email, password: hashedPassword })
+          .returning({ id: users.id });
+        await tx
+          .insert(profileInfo)
+          .values({ userId: created.id, firstName, lastName, description });
+        return created.id;
       })
-      .returning();
-    if (!user[0]) throw new UnauthorizedException('User not created');
+      .catch((e: unknown) => {
+        if (isUniqueViolation(e))
+          throw new ConflictException('Email already in use');
+        throw e;
+      });
 
+<<<<<<< Updated upstream
     const userId = user[0]?.id;
     if (!userId) throw new Error('User ID is undefined');
 
@@ -60,11 +75,14 @@ export class AuthService {
     if (!profile) throw new UnauthorizedException('Profile not created');
 
     const { accessToken, refreshToken } = await this.generateTokens(user[0].id);
+=======
+    const { accessToken, refreshToken } = await this.generateTokens(userId);
+>>>>>>> Stashed changes
     if (!accessToken && !refreshToken)
       throw new UnauthorizedException('Tokens not created');
 
     const userWithProfile = await this.db.query.users.findFirst({
-      where: (users) => eq(users.id, user[0].id),
+      where: (users) => eq(users.id, userId),
       with: {
         profile: true,
       },
@@ -73,31 +91,14 @@ export class AuthService {
     return { accessToken, refreshToken, user: userWithProfile };
   }
 
-  async createProfile(userId: number, input: CreateProfileInput) {
-    const { firstName, lastName, description = '' } = input;
-    const profile = await this.db
-      .insert(profileInfo)
-      .values({
-        userId,
-        firstName,
-        lastName,
-        description,
-      })
-      .returning();
-
-    if (!profile[0])
-      throw new UnauthorizedException('Unable to create profile!');
-
-    return profile[0];
-  }
-
   async login(input: LoginInput) {
     const user = await this.db.query.users.findFirst({
       where: (users) => eq(users.email, input.email),
     });
-    if (!user) throw new UnauthorizedException('User not found!');
+    if (!user) throw new UnauthorizedException('Invalid email or password');
     const checkPassword = await bcrypt.compare(input.password, user?.password);
-    if (!checkPassword) throw new UnauthorizedException('Incorrect password!');
+    if (!checkPassword)
+      throw new UnauthorizedException('Invalid email or password');
     const { accessToken, refreshToken } = await this.generateTokens(user.id);
     if (!accessToken && !refreshToken)
       throw new UnauthorizedException('Tokens not created');

@@ -25,6 +25,12 @@ export class DailyPhotosController {
     if (!uploadedFile) {
       throw new BadRequestException('Файл не надіслано');
     }
+<<<<<<< Updated upstream
+=======
+    if (!buffer) throw new BadRequestException('File is required');
+    if (!mimetype.startsWith('image/'))
+      throw new BadRequestException('Only image files are allowed');
+>>>>>>> Stashed changes
 
     const buffer = await uploadedFile.toBuffer();
     const base64 = buffer.toString('base64');
