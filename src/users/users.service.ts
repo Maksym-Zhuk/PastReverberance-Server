@@ -1,39 +1,31 @@
-<<<<<<< Updated upstream
-import { Inject, Injectable, UnauthorizedException } from '@nestjs/common';
-=======
 import {
   ConflictException,
   Inject,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
->>>>>>> Stashed changes
 import { eq } from 'drizzle-orm';
 import { DRIZZLE } from 'src/drizzle/drizzle.token';
 import { profileInfo } from 'src/drizzle/schema/profileInfo.schema';
 import { users } from 'src/drizzle/schema/users.schema';
 import { DrizzleDB } from 'src/drizzle/types/drizzle';
-<<<<<<< Updated upstream
-import { User } from 'src/graphql/users.model';
-=======
 import { omitPassword } from 'src/common/omit-password';
 import { isUniqueViolation } from 'src/common/is-unique-violation';
->>>>>>> Stashed changes
 import { UpdateProfileInput } from './dto/updateProfileInput';
 
 @Injectable()
 export class UsersService {
   constructor(@Inject(DRIZZLE) private readonly db: DrizzleDB) {}
 
-  async getUser(userId: number): Promise<User> {
+  async getUser(userId: number) {
     const user = await this.db.query.users.findFirst({
       where: (users) => eq(users.id, userId),
       with: {
         profile: true,
       },
     });
-    if (!user) throw new UnauthorizedException('User not found!');
-    return user;
+    if (!user) throw new NotFoundException('User not found!');
+    return omitPassword(user);
   }
 
   async updateUser(userId: number, email: string) {
@@ -48,8 +40,8 @@ export class UsersService {
         throw e;
       });
 
-    if (!user) throw new UnauthorizedException('User not found!');
-    return user;
+    if (!user[0]) throw new NotFoundException('User not found!');
+    return omitPassword(user[0]);
   }
 
   async updateUserProfile(userId: number, profileData: UpdateProfileInput) {
@@ -59,8 +51,8 @@ export class UsersService {
       .where(eq(profileInfo.userId, userId))
       .returning();
 
-    if (!profile) throw new UnauthorizedException('User not found!');
-    return profile;
+    if (!profile[0]) throw new NotFoundException('Profile not found!');
+    return profile[0];
   }
 
   async deleteUser(userId: number) {

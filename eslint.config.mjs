@@ -32,8 +32,6 @@ export default tseslint.config(
       "@typescript-eslint/no-unsafe-call": "warn",
     },
   },
-<<<<<<< Updated upstream
-=======
   {
     files: ['test/**/*.ts', 'src/**/*.spec.ts'],
     rules: {
@@ -43,5 +41,4 @@ export default tseslint.config(
       '@typescript-eslint/require-await': 'off',
     },
   },
->>>>>>> Stashed changes
 );

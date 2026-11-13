@@ -1,28 +1,29 @@
-import { Field, InputType } from '@nestjs/graphql';
+import { Type } from 'class-transformer';
 import {
+  IsDefined,
   IsEmail,
   IsNotEmpty,
   IsString,
   IsStrongPassword,
   MinLength,
+  ValidateNested,
 } from 'class-validator';
 import { CreateProfileInput } from 'src/users/dto/createProfileInput';
 
-@InputType()
 export class RegisterInput {
-  @Field()
   @IsEmail()
   @IsNotEmpty()
   @IsString()
   email: string;
 
-  @Field()
   @MinLength(8)
   @IsStrongPassword()
   @IsNotEmpty()
   @IsString()
   password: string;
 
-  @Field(() => CreateProfileInput)
+  @IsDefined()
+  @ValidateNested()
+  @Type(() => CreateProfileInput)
   profile: CreateProfileInput;
 }

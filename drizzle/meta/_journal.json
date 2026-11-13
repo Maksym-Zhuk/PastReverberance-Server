@@ -22,8 +22,6 @@
       "when": 1752946144183,
       "tag": "0002_wide_blink",
       "breakpoints": true
-<<<<<<< Updated upstream
-=======
     },
     {
       "idx": 3,
@@ -38,7 +36,6 @@
       "when": 1794433917195,
       "tag": "0004_users_email_unique",
       "breakpoints": true
->>>>>>> Stashed changes
     }
   ]
 }

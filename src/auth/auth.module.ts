@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common';
 import { AuthService } from './auth.service';
-import { AuthResolver } from './auth.resolver';
+import { AuthController } from './auth.controller';
 import { DrizzleModule } from 'src/drizzle/drizzle.module';
 import { JwtModule } from '@nestjs/jwt';
 import { ConfigModule } from '@nestjs/config';
@@ -18,6 +18,7 @@ import { JwtStrategy } from './strategies/jwt.strategy';
     ConfigModule.forFeature(refreshJwtConfig),
     UsersModule,
   ],
-  providers: [AuthResolver, AuthService, JwtStrategy, RefreshJwtStrategy],
+  controllers: [AuthController],
+  providers: [AuthService, JwtStrategy, RefreshJwtStrategy],
 })
 export class AuthModule {}

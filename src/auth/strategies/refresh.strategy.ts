@@ -2,11 +2,11 @@ import { Inject, Injectable } from '@nestjs/common';
 import { PassportStrategy } from '@nestjs/passport';
 import { Strategy } from 'passport-jwt';
 import type { ConfigType } from '@nestjs/config';
-import { AuthService } from '../auth.service.js';
+import { AuthService } from '../auth.service';
 import { cookieExtractor } from '../../common/extractors/cookieExtractor';
 import { FastifyRequest } from 'fastify';
 import { JwtService } from '@nestjs/jwt';
-import { refreshJwtConfig } from '../config/refreshJwt.config.js';
+import { refreshJwtConfig } from '../config/refreshJwt.config';
 
 export interface AuthJwtPayload {
   sub: number;

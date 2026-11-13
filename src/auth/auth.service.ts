@@ -1,4 +1,9 @@
-import { Inject, Injectable, UnauthorizedException } from '@nestjs/common';
+import {
+  ConflictException,
+  Inject,
+  Injectable,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { DRIZZLE } from 'src/drizzle/drizzle.token';
 import { DrizzleDB } from 'src/drizzle/types/drizzle';
@@ -12,11 +17,8 @@ import { users } from 'src/drizzle/schema/users.schema';
 import { LoginInput } from './dto/login.dto';
 import { profileInfo } from 'src/drizzle/schema/profileInfo.schema';
 import { refreshJwtConfig } from './config/refreshJwt.config';
-<<<<<<< Updated upstream
-=======
 import { omitPassword } from 'src/common/omit-password';
 import { isUniqueViolation } from 'src/common/is-unique-violation';
->>>>>>> Stashed changes
 
 @Injectable()
 export class AuthService {
@@ -43,6 +45,11 @@ export class AuthService {
   }
 
   async register(input: RegisterInput) {
+    const existing = await this.db.query.users.findFirst({
+      where: (users) => eq(users.email, input.email),
+    });
+    if (existing) throw new ConflictException('Email already in use');
+
     const hashedPassword: string = await bcrypt.hash(input.password, 10);
     const { firstName, lastName, description = '' } = input.profile;
     // user + profile are created atomically: no orphan user if profile fails
@@ -63,21 +70,7 @@ export class AuthService {
         throw e;
       });
 
-<<<<<<< Updated upstream
-    const userId = user[0]?.id;
-    if (!userId) throw new Error('User ID is undefined');
-
-    if (!input.profile) {
-      throw new UnauthorizedException('Profile data missing!');
-    }
-
-    const profile = await this.createProfile(userId, input.profile);
-    if (!profile) throw new UnauthorizedException('Profile not created');
-
-    const { accessToken, refreshToken } = await this.generateTokens(user[0].id);
-=======
     const { accessToken, refreshToken } = await this.generateTokens(userId);
->>>>>>> Stashed changes
     if (!accessToken && !refreshToken)
       throw new UnauthorizedException('Tokens not created');
 
@@ -88,7 +81,11 @@ export class AuthService {
       },
     });
 
-    return { accessToken, refreshToken, user: userWithProfile };
+    return {
+      accessToken,
+      refreshToken,
+      user: userWithProfile && omitPassword(userWithProfile),
+    };
   }
 
   async login(input: LoginInput) {
@@ -102,7 +99,7 @@ export class AuthService {
     const { accessToken, refreshToken } = await this.generateTokens(user.id);
     if (!accessToken && !refreshToken)
       throw new UnauthorizedException('Tokens not created');
-    return { accessToken, refreshToken, user };
+    return { accessToken, refreshToken, user: omitPassword(user) };
   }
 
   async validateJwtUser(userId: number) {

@@ -1,53 +1,98 @@
 import {
-  Controller,
-  Post,
-  UseGuards,
-  Req,
   BadRequestException,
+  Body,
+  Controller,
+  Delete,
+  Get,
+  HttpCode,
+  Param,
+  ParseIntPipe,
+  Patch,
+  Post,
+  Req,
+  UseGuards,
 } from '@nestjs/common';
 import { FastifyRequest } from 'fastify';
+import { plainToInstance } from 'class-transformer';
+import { validate } from 'class-validator';
 import { DailyPhotosService } from './daily-photos.service';
-import { MultipartFile } from '@fastify/multipart';
 import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
+import { CurrentUserDecorator } from 'src/common/decorators/current-user.decorator';
 import { CurrentUser } from 'src/auth/types/current-user';
+import { UpdateDailyPhotoInput } from './dto/updateDailyPhotoInput';
+import { CreateDailyPhotoInput } from './dto/createDailyPhotoInput';
 
-@Controller('upload')
+@UseGuards(JwtAuthGuard)
+@Controller('daily-photos')
 export class DailyPhotosController {
   constructor(private readonly dailyPhotosService: DailyPhotosService) {}
 
-  @UseGuards(JwtAuthGuard)
-  @Post('daily-photo')
-  async uploadDailyPhoto(
-    @Req() req: FastifyRequest & { file: () => Promise<MultipartFile> },
+  @Get()
+  list(@CurrentUserDecorator() user: CurrentUser) {
+    return this.dailyPhotosService.getDailyPhotos(user.id);
+  }
+
+  @Get(':id')
+  get(
+    @Param('id', ParseIntPipe) id: number,
+    @CurrentUserDecorator() user: CurrentUser,
   ) {
-    const user = req.user as unknown as CurrentUser;
-    const uploadedFile = await req.file();
-    if (!uploadedFile) {
-      throw new BadRequestException('Файл не надіслано');
+    return this.dailyPhotosService.getDailyPhotoByID(id, user.id);
+  }
+
+  @Post()
+  async create(
+    @Req() req: FastifyRequest,
+    @CurrentUserDecorator() user: CurrentUser,
+  ) {
+    let buffer: Buffer | undefined;
+    let mimetype = '';
+    const fields: Record<string, unknown> = {};
+
+    for await (const part of req.parts()) {
+      if (part.type === 'file') {
+        buffer = await part.toBuffer();
+        mimetype = part.mimetype;
+      } else {
+        fields[part.fieldname] = part.value;
+      }
     }
-<<<<<<< Updated upstream
-=======
     if (!buffer) throw new BadRequestException('File is required');
     if (!mimetype.startsWith('image/'))
       throw new BadRequestException('Only image files are allowed');
->>>>>>> Stashed changes
 
-    const buffer = await uploadedFile.toBuffer();
-    const base64 = buffer.toString('base64');
-    const dataUri = `data:${uploadedFile.mimetype};base64,${base64}`;
+    const input = plainToInstance(CreateDailyPhotoInput, fields);
+    const errors = await validate(input, { whitelist: true });
+    if (errors.length) throw new BadRequestException(errors.toString());
 
-    const uploadResult =
-      await this.dailyPhotosService.uploadDailyPhotoToCloudinary(
-        dataUri,
-        user.id,
-      );
-
-    const createdPhoto = await this.dailyPhotosService.createDailyPhoto(
+    const dataUri = `data:${mimetype};base64,${buffer.toString('base64')}`;
+    const uploaded = await this.dailyPhotosService.uploadDailyPhotoToCloudinary(
+      dataUri,
       user.id,
-      uploadResult.secure_url,
-      uploadResult.public_id,
     );
+    return this.dailyPhotosService.createDailyPhoto(
+      user.id,
+      uploaded.secure_url,
+      uploaded.public_id,
+      input,
+    );
+  }
 
-    return createdPhoto;
+  @Patch(':id')
+  update(
+    @Param('id', ParseIntPipe) id: number,
+    @CurrentUserDecorator() user: CurrentUser,
+    @Body() input: UpdateDailyPhotoInput,
+  ) {
+    return this.dailyPhotosService.update(id, user.id, input);
+  }
+
+  @Delete(':id')
+  @HttpCode(204)
+  async remove(
+    @Param('id', ParseIntPipe) id: number,
+    @CurrentUserDecorator() user: CurrentUser,
+  ) {
+    await this.dailyPhotosService.delete(id, user.id);
   }
 }

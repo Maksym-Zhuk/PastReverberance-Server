@@ -1,7 +1,3 @@
-<<<<<<< Updated upstream
-import { Inject, Injectable, UnauthorizedException } from '@nestjs/common';
-import { eq } from 'drizzle-orm';
-=======
 import {
   Inject,
   Injectable,
@@ -10,7 +6,6 @@ import {
   ServiceUnavailableException,
 } from '@nestjs/common';
 import { and, desc, eq } from 'drizzle-orm';
->>>>>>> Stashed changes
 import { cloudinary } from 'src/common/config/cloudinary.config';
 import { DRIZZLE } from 'src/drizzle/drizzle.token';
 import { dailyPhotos } from 'src/drizzle/schema/dailyPhotos.schema';
@@ -56,10 +51,21 @@ export class DailyPhotosService {
     }
   }
 
-  async createDailyPhoto(userId: number, photoUrl: string, photoId: string) {
+  async createDailyPhoto(
+    userId: number,
+    photoUrl: string,
+    photoId: string,
+    extra: { note?: string; date?: string } = {},
+  ) {
     const dailyPhoto = await this.db
       .insert(dailyPhotos)
-      .values({ photoUrl, userId, photoId, date: new Date().toISOString() })
+      .values({
+        photoUrl,
+        userId,
+        photoId,
+        note: extra.note,
+        date: extra.date ?? new Date().toISOString(),
+      })
       .returning();
 
     return dailyPhoto[0];
@@ -73,38 +79,34 @@ export class DailyPhotosService {
       .orderBy(desc(dailyPhotos.date), desc(dailyPhotos.id));
   }
 
-  async getDailyPhotos(userId: number) {
-    return await this.db
-      .select()
-      .from(dailyPhotos)
-      .where(eq(dailyPhotos.userId, userId));
+  getDailyPhotos(userId: number) {
+    return this.findByUserId(userId);
   }
 
-  async getDailyPhotoByID(id: number) {
+  async getDailyPhotoByID(id: number, userId: number) {
     const dailyPhoto = await this.db.query.dailyPhotos.findFirst({
-      where: (dailyPhoto) => eq(dailyPhoto.id, id),
+      where: (p) => and(eq(p.id, id), eq(p.userId, userId)),
     });
-
-    if (!dailyPhoto) throw new UnauthorizedException('Daily photo not found!');
+    if (!dailyPhoto) throw new NotFoundException('Daily photo not found!');
     return dailyPhoto;
   }
 
-  async update(input: UpdateDailyPhotoInput) {
-    const { id, ...dailyPhoto } = input;
+  async update(id: number, userId: number, input: UpdateDailyPhotoInput) {
+    const values = Object.fromEntries(
+      Object.entries(input).filter(([, v]) => v !== undefined),
+    );
+    if (Object.keys(values).length === 0)
+      return this.getDailyPhotoByID(id, userId);
 
-    const updateDailyPhoto = await this.db
+    const [updated] = await this.db
       .update(dailyPhotos)
-      .set({ ...dailyPhoto })
-      .where(eq(dailyPhotos.id, id))
+      .set(values)
+      .where(and(eq(dailyPhotos.id, id), eq(dailyPhotos.userId, userId)))
       .returning();
-
-    return updateDailyPhoto[0];
+    if (!updated) throw new NotFoundException('Daily photo not found!');
+    return updated;
   }
 
-<<<<<<< Updated upstream
-  async delete(id: number) {
-    return await this.db.delete(dailyPhotos).where(eq(dailyPhotos.id, id));
-=======
   async delete(id: number, userId: number) {
     const deleted = await this.db
       .delete(dailyPhotos)
@@ -118,6 +120,5 @@ export class DailyPhotosService {
     } catch (e) {
       this.logger.warn(`Cloudinary destroy failed: ${String(e)}`);
     }
->>>>>>> Stashed changes
   }
 }

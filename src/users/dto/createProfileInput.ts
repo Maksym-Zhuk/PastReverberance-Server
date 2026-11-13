@@ -1,20 +1,15 @@
-import { Field, InputType } from '@nestjs/graphql';
-import { IsNotEmpty, IsString } from 'class-validator';
+import { IsNotEmpty, IsOptional, IsString } from 'class-validator';
 
-@InputType()
 export class CreateProfileInput {
-  @Field()
   @IsNotEmpty()
   @IsString()
   firstName: string;
 
-  @Field()
   @IsNotEmpty()
   @IsString()
   lastName: string;
 
-  @Field({ nullable: true })
-  @IsNotEmpty()
+  @IsOptional()
   @IsString()
   description?: string;
 }

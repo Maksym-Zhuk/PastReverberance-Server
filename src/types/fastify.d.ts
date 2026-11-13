@@ -1,3 +1,5 @@
+import 'fastify';
+
 interface RefreshUser {
   accessToken: string;
 }
