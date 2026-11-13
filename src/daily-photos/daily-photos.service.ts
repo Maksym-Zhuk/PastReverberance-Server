@@ -91,12 +91,28 @@ export class DailyPhotosService {
     return dailyPhoto;
   }
 
-  async update(id: number, userId: number, input: UpdateDailyPhotoInput) {
-    const values = Object.fromEntries(
+  // newPhotoDataUri replaces the stored image (old Cloudinary asset is removed)
+  async update(
+    id: number,
+    userId: number,
+    input: UpdateDailyPhotoInput,
+    newPhotoDataUri?: string,
+  ) {
+    // ownership check first so we never upload for someone else's photo
+    const current = await this.getDailyPhotoByID(id, userId);
+
+    const values: Record<string, unknown> = Object.fromEntries(
       Object.entries(input).filter(([, v]) => v !== undefined),
     );
-    if (Object.keys(values).length === 0)
-      return this.getDailyPhotoByID(id, userId);
+    if (newPhotoDataUri) {
+      const uploaded = await this.uploadDailyPhotoToCloudinary(
+        newPhotoDataUri,
+        userId,
+      );
+      values.photoUrl = uploaded.secure_url;
+      values.photoId = uploaded.public_id;
+    }
+    if (Object.keys(values).length === 0) return current;
 
     const [updated] = await this.db
       .update(dailyPhotos)
@@ -104,7 +120,18 @@ export class DailyPhotosService {
       .where(and(eq(dailyPhotos.id, id), eq(dailyPhotos.userId, userId)))
       .returning();
     if (!updated) throw new NotFoundException('Daily photo not found!');
+    if (newPhotoDataUri) await this.destroyAsset(current.photoId);
     return updated;
+  }
+
+  // best effort: the DB row is already updated/gone, don't fail the request
+  private async destroyAsset(photoId: string) {
+    if (!process.env.CLOUDINARY_CLOUD_NAME) return;
+    try {
+      await cloudinary.uploader.destroy(photoId);
+    } catch (e) {
+      this.logger.warn(`Cloudinary destroy failed: ${String(e)}`);
+    }
   }
 
   async delete(id: number, userId: number) {
@@ -113,12 +140,6 @@ export class DailyPhotosService {
       .where(and(eq(dailyPhotos.id, id), eq(dailyPhotos.userId, userId)))
       .returning({ id: dailyPhotos.id, photoId: dailyPhotos.photoId });
     if (!deleted[0]) throw new NotFoundException('Daily photo not found!');
-    // best effort: the DB row is already gone, don't fail the request
-    if (!process.env.CLOUDINARY_CLOUD_NAME) return;
-    try {
-      await cloudinary.uploader.destroy(deleted[0].photoId);
-    } catch (e) {
-      this.logger.warn(`Cloudinary destroy failed: ${String(e)}`);
-    }
+    await this.destroyAsset(deleted[0].photoId);
   }
 }

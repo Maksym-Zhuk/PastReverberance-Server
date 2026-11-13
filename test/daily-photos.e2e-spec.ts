@@ -170,6 +170,52 @@ describe('Daily photos (e2e)', () => {
     );
   });
 
+  it('PATCH multipart with a file replaces the photo and removes the old asset', async () => {
+    process.env.CLOUDINARY_CLOUD_NAME = 'test';
+    const destroy = jest
+      .spyOn(cloudinary.uploader, 'destroy')
+      .mockResolvedValue({ result: 'ok' });
+    try {
+      const { cookie } = await registerUser(app);
+      const { id } = (await upload(cookie, { note: 'old' })).json();
+
+      const form = multipart({ note: 'new' }, png);
+      const res = await app.inject({
+        method: 'PATCH',
+        url: `/daily-photos/${id}`,
+        payload: form.payload,
+        headers: { ...form.headers, cookie },
+      });
+      expect(res.statusCode).toBe(200);
+      expect(res.json()).toMatchObject({
+        note: 'new',
+        photoUrl: 'https://cdn/p2.png',
+      });
+      expect(destroy).toHaveBeenCalledWith('p1');
+    } finally {
+      delete process.env.CLOUDINARY_CLOUD_NAME;
+    }
+  });
+
+  it('PATCH multipart without a file only updates the fields', async () => {
+    const { cookie } = await registerUser(app);
+    const { id } = (await upload(cookie, { note: 'old' })).json();
+
+    const form = multipart({ note: 'edited' });
+    const res = await app.inject({
+      method: 'PATCH',
+      url: `/daily-photos/${id}`,
+      payload: form.payload,
+      headers: { ...form.headers, cookie },
+    });
+    expect(res.statusCode).toBe(200);
+    expect(res.json()).toMatchObject({
+      note: 'edited',
+      photoUrl: 'https://cdn/p1.png',
+    });
+    expect(uploads).toBe(1);
+  });
+
   it("another user's photo is 404 for GET, PATCH and DELETE (and stays intact)", async () => {
     const owner = await registerUser(app);
     const intruder = await registerUser(app, { email: 'evil@example.com' });

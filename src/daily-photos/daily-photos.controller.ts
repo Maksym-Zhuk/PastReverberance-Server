@@ -1,6 +1,5 @@
 import {
   BadRequestException,
-  Body,
   Controller,
   Delete,
   Get,
@@ -40,32 +39,43 @@ export class DailyPhotosController {
     return this.dailyPhotosService.getDailyPhotoByID(id, user.id);
   }
 
+  // multipart body -> optional image data URI + text fields
+  private async readParts(req: FastifyRequest) {
+    let dataUri: string | undefined;
+    const fields: Record<string, unknown> = {};
+
+    for await (const part of req.parts()) {
+      if (part.type === 'file') {
+        const buffer = await part.toBuffer();
+        if (!part.mimetype.startsWith('image/'))
+          throw new BadRequestException('Only image files are allowed');
+        dataUri = `data:${part.mimetype};base64,${buffer.toString('base64')}`;
+      } else {
+        fields[part.fieldname] = part.value;
+      }
+    }
+    return { dataUri, fields };
+  }
+
+  private async validated<T extends object>(
+    cls: new () => T,
+    fields: unknown,
+  ): Promise<T> {
+    const input = plainToInstance(cls, fields ?? {});
+    const errors = await validate(input, { whitelist: true });
+    if (errors.length) throw new BadRequestException(errors.toString());
+    return input;
+  }
+
   @Post()
   async create(
     @Req() req: FastifyRequest,
     @CurrentUserDecorator() user: CurrentUser,
   ) {
-    let buffer: Buffer | undefined;
-    let mimetype = '';
-    const fields: Record<string, unknown> = {};
+    const { dataUri, fields } = await this.readParts(req);
+    if (!dataUri) throw new BadRequestException('File is required');
+    const input = await this.validated(CreateDailyPhotoInput, fields);
 
-    for await (const part of req.parts()) {
-      if (part.type === 'file') {
-        buffer = await part.toBuffer();
-        mimetype = part.mimetype;
-      } else {
-        fields[part.fieldname] = part.value;
-      }
-    }
-    if (!buffer) throw new BadRequestException('File is required');
-    if (!mimetype.startsWith('image/'))
-      throw new BadRequestException('Only image files are allowed');
-
-    const input = plainToInstance(CreateDailyPhotoInput, fields);
-    const errors = await validate(input, { whitelist: true });
-    if (errors.length) throw new BadRequestException(errors.toString());
-
-    const dataUri = `data:${mimetype};base64,${buffer.toString('base64')}`;
     const uploaded = await this.dailyPhotosService.uploadDailyPhotoToCloudinary(
       dataUri,
       user.id,
@@ -78,13 +88,20 @@ export class DailyPhotosController {
     );
   }
 
+  // JSON (note/date) or multipart (note/date + optional replacement photo)
   @Patch(':id')
-  update(
+  async update(
     @Param('id', ParseIntPipe) id: number,
     @CurrentUserDecorator() user: CurrentUser,
-    @Body() input: UpdateDailyPhotoInput,
+    @Req() req: FastifyRequest,
   ) {
-    return this.dailyPhotosService.update(id, user.id, input);
+    let dataUri: string | undefined;
+    let raw: unknown = req.body;
+    if (req.isMultipart()) {
+      ({ dataUri, fields: raw } = await this.readParts(req));
+    }
+    const input = await this.validated(UpdateDailyPhotoInput, raw);
+    return this.dailyPhotosService.update(id, user.id, input, dataUri);
   }
 
   @Delete(':id')
